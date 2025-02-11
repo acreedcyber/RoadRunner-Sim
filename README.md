@@ -17,3 +17,17 @@ A realistic, open-source cybersecurity testbed for the 2018 Honda Civic, designe
 
 ✅ Logs and monitors CAN messages in real time
 
+💍 Installation
+
+1. Clone the Repository
+
+git clone https://github.com/your-username/honda-civic-testbed.git
+cd honda-civic-testbed
+
+(Replace your-username with your actual GitHub username.)
+
+2. Install Dependencies
+
+pip install pyqt6 pyqtgraph matplotlib can cantools
+
+3. Setup Virtual CAN Bus

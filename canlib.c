@@ -1,30 +1,28 @@
+#include "canlib.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>   // ✅ Added for ioctl()
 #include <linux/can.h>
 #include <linux/can/raw.h>
-#include <net/if.h>       // ✅ Added for struct ifreq
-#include "canlib.h"
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
 
 int can_socket;
 
-// Initialize CAN bus
 int can_init(const char *interface) {
     struct ifreq ifr;
     struct sockaddr_can addr;
 
     can_socket = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (can_socket < 0) {
-        perror("Error opening CAN socket");
+        perror("Error creating CAN socket");
         return -1;
     }
 
-    strcpy(ifr.ifr_name, interface);
+    strncpy(ifr.ifr_name, interface, IFNAMSIZ);
     if (ioctl(can_socket, SIOCGIFINDEX, &ifr) < 0) {
-        perror("Error getting CAN interface index");
+        perror("Error getting interface index");
         return -1;
     }
 
@@ -39,21 +37,25 @@ int can_init(const char *interface) {
     return 0;
 }
 
-// Send CAN message
-int can_send(struct can_frame *frame) {
-    if (write(can_socket, frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
+void send_can_message(int can_id, int value) {
+    struct can_frame frame;
+    frame.can_id = can_id;
+    frame.can_dlc = sizeof(value);
+    memcpy(frame.data, &value, sizeof(value));
+    
+    if (write(can_socket, &frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
         perror("Error sending CAN message");
-        return -1;
     }
-    return 0;
 }
 
-// Receive CAN message
 int can_receive(struct can_frame *frame) {
-    int bytes_read = read(can_socket, frame, sizeof(struct can_frame));
-    if (bytes_read < 0) {
-        perror("Error receiving CAN message");
-        return -1;
+    int nbytes = read(can_socket, frame, sizeof(struct can_frame));
+    if (nbytes < 0) {
+        perror("Error reading CAN message");
     }
-    return bytes_read;
+    return nbytes;
+}
+
+void close_can() {
+    close(can_socket);
 }

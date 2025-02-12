@@ -8,7 +8,7 @@
 #include "graphics.h"
 #include "input.h"
 #include "real_can_data.h"
-#include "vehicle_state.h"  // ✅ Ensure this is included
+#include "vehicle_state.h"
 
 // Honda-specific CAN IDs
 #define HONDA_SPEED_ID 0x158
@@ -23,7 +23,7 @@
 #define HONDA_ENGINE_TEMP_ID 0x610
 #define HONDA_FUEL_LEVEL_ID 0x620
 
-// ✅ Allocate VehicleState dynamically
+// Vehicle State
 VehicleState *car;
 
 // Function to send CAN messages
@@ -52,28 +52,45 @@ void update_dashboard() {
     sdl_refresh_screen();
 }
 
+// Background thread for continuous CAN simulation
+void *simulate_ecu_behavior(void *arg) {
+    while (1) {
+        car->rpm = 800 + (rand() % 50);
+        car->engine_temp = 90 + (rand() % 5);
+        car->fuel_level -= 0.01;
+        if (car->fuel_level < 5) car->fuel_level = 50;
+
+        send_can_message(HONDA_RPM_ID, car->rpm);
+        send_can_message(HONDA_ENGINE_TEMP_ID, car->engine_temp);
+        send_can_message(HONDA_FUEL_LEVEL_ID, car->fuel_level);
+        send_can_message(HONDA_TIRE_PRESSURE_ID, 32 + (rand() % 3));
+        sleep(1);
+    }
+    return NULL;
+}
+
 // Thread function to handle CAN input
 void *can_listener(void *arg) {
     struct can_frame frame;
     while (1) {
         if (can_receive(&frame) > 0) {
-            parse_real_honda_can_data(&frame, car);  // ✅ Use pointer
+            parse_real_honda_can_data(&frame, car);
             update_dashboard();
         }
+        send_can_message(HONDA_STEERING_ID, car->steering);
+        send_can_message(HONDA_BRAKE_ID, car->brakes);
+        sleep(1);
     }
     return NULL;
 }
 
 // Main function
 int main() {
-    // ✅ Allocate memory for VehicleState
     car = malloc(sizeof(VehicleState));
     if (!car) {
-        printf("Memory allocation failed for VehicleState\\n");
+        printf("Memory allocation failed for VehicleState\n");
         return 1;
     }
-
-    // Initialize car values
     car->speed = 0;
     car->rpm = 800;
     car->steering = 0;
@@ -86,20 +103,17 @@ int main() {
     car->engine_temp = 90;
     car->fuel_level = 50;
 
-    // Initialize CAN bus
     if (can_init("vcan0") < 0) {
-        printf("Error initializing CAN bus.\\n");
+        printf("Error initializing CAN bus.\n");
         return 1;
     }
     
-    // Initialize SDL graphics
     init_sdl_graphics();
     
-    // Start CAN listener thread
-    pthread_t can_thread;
+    pthread_t can_thread, ecu_thread;
     pthread_create(&can_thread, NULL, can_listener, NULL);
+    pthread_create(&ecu_thread, NULL, simulate_ecu_behavior, NULL);
     
-    // Handle user inputs
     while (1) {
         int input = get_input();
         switch (input) {
@@ -136,9 +150,6 @@ int main() {
         }
         update_dashboard();
     }
-
-    // Free allocated memory before exit
     free(car);
-
     return 0;
 }

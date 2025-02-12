@@ -35,21 +35,13 @@ void send_can_message(int can_id, int value) {
     can_send(&frame);
 }
 
-// Function to update dashboard
-void update_dashboard() {
-    sdl_clear_screen();
-    draw_speedometer_sdl(car->speed);
-    draw_rpm_gauge_sdl(car->rpm);
-    draw_steering_wheel_sdl(car->steering);
-    draw_brake_indicator_sdl(car->brakes);
-    draw_light_status_sdl(car->lights);
-    draw_door_status_sdl(car->doors);
-    draw_infotainment_status_sdl(car->infotainment);
-    draw_airbag_status_sdl(car->airbags);
-    draw_tire_pressure_sdl(car->tire_pressure);
-    draw_engine_temp_sdl(car->engine_temp);
-    draw_fuel_level_sdl(car->fuel_level);
-    sdl_refresh_screen();
+// Function to update dashboard at 60FPS
+void *dashboard_updater(void *arg) {
+    while (1) {
+        update_dashboard();
+        usleep(16000);  // ✅ Update every 16ms (~60FPS)
+    }
+    return NULL;
 }
 
 // Background thread for continuous CAN simulation
@@ -64,7 +56,7 @@ void *simulate_ecu_behavior(void *arg) {
         send_can_message(HONDA_ENGINE_TEMP_ID, car->engine_temp);
         send_can_message(HONDA_FUEL_LEVEL_ID, car->fuel_level);
         send_can_message(HONDA_TIRE_PRESSURE_ID, 32 + (rand() % 3));
-        sleep(1);
+        usleep(10000);  // ✅ Reduced delay to 10ms for real-time updates
     }
     return NULL;
 }
@@ -75,11 +67,8 @@ void *can_listener(void *arg) {
     while (1) {
         if (can_receive(&frame) > 0) {
             parse_real_honda_can_data(&frame, car);
-            update_dashboard();
         }
-        send_can_message(HONDA_STEERING_ID, car->steering);
-        send_can_message(HONDA_BRAKE_ID, car->brakes);
-        sleep(1);
+        usleep(5000);  // ✅ Reduced delay to 5ms for instant CAN processing
     }
     return NULL;
 }
@@ -110,9 +99,10 @@ int main() {
     
     init_sdl_graphics();
     
-    pthread_t can_thread, ecu_thread;
+    pthread_t can_thread, ecu_thread, ui_thread;
     pthread_create(&can_thread, NULL, can_listener, NULL);
     pthread_create(&ecu_thread, NULL, simulate_ecu_behavior, NULL);
+    pthread_create(&ui_thread, NULL, dashboard_updater, NULL);
     
     while (1) {
         int input = get_input();
@@ -148,7 +138,6 @@ int main() {
                 send_can_message(HONDA_DOOR_ID, car->doors);
                 break;
         }
-        update_dashboard();
     }
     free(car);
     return 0;

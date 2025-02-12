@@ -1,3 +1,12 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>   // ✅ Added for ioctl()
+#include <linux/can.h>
+#include <linux/can/raw.h>
+#include <net/if.h>       // ✅ Added for struct ifreq
 #include "canlib.h"
 
 int can_socket;
@@ -14,7 +23,10 @@ int can_init(const char *interface) {
     }
 
     strcpy(ifr.ifr_name, interface);
-    ioctl(can_socket, SIOCGIFINDEX, &ifr);
+    if (ioctl(can_socket, SIOCGIFINDEX, &ifr) < 0) {
+        perror("Error getting CAN interface index");
+        return -1;
+    }
 
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;

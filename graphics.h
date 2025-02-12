@@ -5,7 +5,7 @@
 #include <SDL2/SDL_image.h>
 
 // Initialize SDL graphics
-int init_sdl_graphics();
+void init_sdl_graphics();
 
 // Clear the screen
 void sdl_clear_screen();

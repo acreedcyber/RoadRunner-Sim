@@ -4,8 +4,10 @@
 #include "graphics.h"
 #include "vehicle_state.h"
 
-// Load UI texture from ICSim's ic.svg
+// Load UI textures
 SDL_Texture *ic_texture;
+SDL_Window *window;
+SDL_Renderer *renderer;
 
 SDL_Texture *load_texture(SDL_Renderer *renderer, const char *file) {
     SDL_Surface *image = IMG_Load(file);
@@ -18,8 +20,30 @@ SDL_Texture *load_texture(SDL_Renderer *renderer, const char *file) {
     return texture;
 }
 
-void init_ui(SDL_Renderer *renderer) {
-    ic_texture = load_texture(renderer, "assets/ic.svg");  // Use ICSim UI
+void init_sdl_graphics() {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+        exit(1);
+    }
+    
+    if (!IMG_Init(IMG_INIT_PNG)) {
+        printf("SDL_image could not initialize! IMG_Error: %s\n", IMG_GetError());
+        exit(1);
+    }
+    
+    window = SDL_CreateWindow("Honda ICSim", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+    if (!window) {
+        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        exit(1);
+    }
+    
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (!renderer) {
+        printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+        exit(1);
+    }
+    
+    ic_texture = load_texture(renderer, "assets/ic.svg");
 }
 
 void draw_texture(SDL_Renderer *renderer, SDL_Texture *texture, int x, int y, int w, int h) {
@@ -33,22 +57,21 @@ void draw_rotated_texture(SDL_Renderer *renderer, SDL_Texture *texture, int x, i
 }
 
 void draw_dashboard(SDL_Renderer *renderer, VehicleState *car) {
-    // Render ICSim-style dashboard
-    draw_texture(renderer, ic_texture, 50, 50, 600, 400);  // Full ICSim UI
-    
-    // Animate speedometer needle
-    draw_rotated_texture(renderer, ic_texture, 250, 180, car->speed * 1.5);
-
-    // Animate steering wheel movement from ic.svg
-    draw_rotated_texture(renderer, ic_texture, 400, 300, car->steering * 2);
-
-    // Show doors status from ic.svg
-    if (car->doors)
-        draw_texture(renderer, ic_texture, 500, 350, 50, 50);
+    draw_texture(renderer, ic_texture, 50, 50, 600, 400);  // Render ICSim-style UI
+    draw_rotated_texture(renderer, ic_texture, 250, 180, car->speed * 1.5); // Speedometer Needle
+    draw_rotated_texture(renderer, ic_texture, 400, 300, car->steering * 2); // Steering Wheel
+    if (car->doors) draw_texture(renderer, ic_texture, 500, 350, 50, 50); // Door Status
 }
 
 void update_dashboard(SDL_Renderer *renderer, VehicleState *car) {
     SDL_RenderClear(renderer);
     draw_dashboard(renderer, car);
     SDL_RenderPresent(renderer);
+}
+
+void close_sdl_graphics() {
+    SDL_DestroyTexture(ic_texture);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }

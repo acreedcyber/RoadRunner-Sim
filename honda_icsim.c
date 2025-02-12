@@ -10,6 +10,9 @@
 #include "real_can_data.h"
 #include "vehicle_state.h"
 
+extern SDL_Renderer *renderer;  // Declare renderer from graphics.c
+extern void send_can_message(int can_id, int value);  // Declare send_can_message
+
 // Vehicle state
 VehicleState *car;
 

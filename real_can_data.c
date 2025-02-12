@@ -1,35 +1,45 @@
-#include "real_can_data.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include "real_can_data.h"
+#include "vehicle_state.h"
 
 void parse_real_honda_can_data(struct can_frame *frame, VehicleState *car) {
+    if (!frame || !car) return;
+    
     switch (frame->can_id) {
-        case 0x158: // Speed
+        case HONDA_SPEED_ID:
             car->speed = frame->data[0];
-            printf("Speed updated: %d mph\\n", car->speed);
             break;
-        case 0x17C: // RPM
-            car->rpm = frame->data[0] * 100;
-            printf("RPM updated: %d\\n", car->rpm);
+        case HONDA_RPM_ID:
+            car->rpm = (frame->data[0] << 8) | frame->data[1];
             break;
-        case 0x123: // Steering
-            car->steering = frame->data[0] - 30;
-            printf("Steering angle: %d\\n", car->steering);
+        case HONDA_STEERING_ID:
+            car->steering = (int8_t)frame->data[0];
             break;
-        case 0x1FA: // Brakes
+        case HONDA_BRAKE_ID:
             car->brakes = frame->data[0];
-            printf("Brakes: %s\\n", car->brakes ? "Engaged" : "Released");
             break;
-        case 0x3D0: // Lights
+        case HONDA_LIGHTS_ID:
             car->lights = frame->data[0];
-            printf("Lights: %s\\n", car->lights ? "On" : "Off");
             break;
-        case 0x3E9: // Doors
+        case HONDA_DOOR_ID:
             car->doors = frame->data[0];
-            printf("Doors: %s\\n", car->doors ? "Locked" : "Unlocked");
+            break;
+        case HONDA_FUEL_LEVEL_ID:
+            car->fuel_level = frame->data[0];
+            break;
+        case HONDA_ENGINE_TEMP_ID:
+            car->engine_temp = frame->data[0];
+            break;
+        case HONDA_TIRE_PRESSURE_ID:
+            car->tire_pressure = frame->data[0];
+            break;
+        case HONDA_AIRBAG_ID:
+            car->airbags = frame->data[0];
             break;
         default:
-            printf("Unknown CAN ID: 0x%X\\n", frame->can_id);
+            printf("Unknown CAN ID: 0x%X\n", frame->can_id);
             break;
     }
 }

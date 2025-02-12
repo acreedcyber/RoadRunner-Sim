@@ -1,26 +1,11 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -I./ -I/usr/include/SDL2 -D_REENTRANT
-LDFLAGS = -lSDL2 -lSDL2_image
+CFLAGS = -Wall -Wextra -I. -I/usr/include/SDL2 -D_REENTRANT
+LDFLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx -lSDL2_joystick
 
-SRC = honda_icsim.c canlib.c graphics.c input.c real_can_data.c
-OBJ = $(SRC:.c=.o)
-EXEC = honda_icsim
+all: honda_icsim
 
-all: $(EXEC)
-
-$(EXEC): $(OBJ)
-	$(CC) $(OBJ) -o $(EXEC) $(LDFLAGS)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+honda_icsim: honda_icsim.o graphics.o input.o real_can_data.o canlib.o
+	$(CC) $(CFLAGS) -o honda_icsim honda_icsim.o graphics.o input.o real_can_data.o canlib.o $(LDFLAGS)
 
 clean:
-	rm -f $(OBJ) $(EXEC)
-
-install:
-	cp $(EXEC) /usr/local/bin/
-
-uninstall:
-	rm -f /usr/local/bin/$(EXEC)
-
-.PHONY: all clean install uninstall
+	rm -f *.o honda_icsim

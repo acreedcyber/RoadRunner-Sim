@@ -2,6 +2,7 @@
 #include <SDL2/SDL_image.h>
 #include <math.h>
 #include "graphics.h"
+#include "vehicle_state.h"
 
 // Load UI texture from ICSim's ic.svg
 SDL_Texture *ic_texture;

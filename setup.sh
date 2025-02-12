@@ -30,5 +30,4 @@ Icon=car.png
 Type=Application
 Categories=Development" | sudo tee /usr/share/applications/honda_icsim.desktop
 
-
 echo "✅ Installation Complete! Run 'honda_icsim' from terminal or find it in your applications menu."

@@ -70,7 +70,7 @@ void *can_listener(void *arg) {
     struct can_frame frame;
     while (1) {
         if (can_receive(&frame) > 0) {
-            parse_real_honda_can_data(&frame, &car);
+            parse_real_honda_can_data(&frame, car);
             update_dashboard();
         }
     }
